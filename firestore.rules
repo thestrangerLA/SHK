@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: cooperativeMembers
+    // Fields: memberId, name, joinDate, deposits, createdAt
+    //
+    // Collection: cooperativeDeposits
+    // Fields: memberId, memberName, date, kip, thb, usd, cny, createdAt
+    //
+    // Collection: cooperativeLoans
+    // Fields: loanCode, memberId, debtorName, amount, repaymentAmount, purpose, applicationDate, loanType, durationYears, status, createdAt
+    //
+    // Collection: cooperativeLoanRepayments
+    // Fields: loanId, repaymentDate, amountPaid, note, createdAt
+    //
+    // Collection: cooperativeInvestments
+    // Fields: title, amount, date, createdAt
+    //
+    // Collection: cooperative-transactions
+    // Fields: transactionGroupId, accountId, date, amount, type, description, createdAt
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "teepmp1302@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidCurrencyValues(data) {
+      return data is map &&
+             data.kip is number &&
+             data.thb is number &&
+             data.usd is number &&
+             data.cny is number;
+    }
+
+    function isValidMember(data) {
+      return data.memberId is string && data.memberId.size() > 0 &&
+             data.name is string && data.name.size() > 0 &&
+             data.joinDate is timestamp &&
+             isValidCurrencyValues(data.deposits);
+    }
+
+    function isValidDeposit(data) {
+      return data.memberId is string &&
+             data.date is timestamp &&
+             data.kip is number &&
+             data.thb is number &&
+             data.usd is number &&
+             data.cny is number;
+    }
+
+    function isValidLoan(data) {
+      return data.loanCode is string &&
+             data.amount is map && isValidCurrencyValues(data.amount) &&
+             data.applicationDate is timestamp &&
+             data.loanType in ['MURABAHA', 'QARD_HASAN'] &&
+             data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    function isValidRepayment(data) {
+      return data.loanId is string &&
+             data.repaymentDate is timestamp &&
+             isValidCurrencyValues(data.amountPaid);
+    }
+
+    function isValidInvestment(data) {
+      return data.title is string && data.title.size() > 0 &&
+             isValidCurrencyValues(data.amount) &&
+             data.date is timestamp;
+    }
+
+    function isValidTransaction(data) {
+      return data.transactionGroupId is string &&
+             data.accountId is string &&
+             data.date is timestamp &&
+             isValidCurrencyValues(data.amount) &&
+             data.type in ['debit', 'credit'];
+    }
+
+    function isValidAccount(data) {
+      return data.code is string && data.code.size() > 0 &&
+             data.name is string && data.name.size() > 0 &&
+             data.type in ['asset', 'liability', 'equity', 'income', 'expense'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /cooperativeAccounts/{accountId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidAccount(request.resource.data);
+      allow update: if isAuthenticated() && isValidAccount(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /cooperativeMembers/{memberId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidMember(request.resource.data);
+      allow update: if isAuthenticated() && isValidMember(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /cooperativeDeposits/{depositId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidDeposit(request.resource.data);
+      allow update: if isAuthenticated() && isValidDeposit(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /cooperativeWithdrawals/{withdrawalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidDeposit(request.resource.data);
+      allow update: if isAuthenticated() && isValidDeposit(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /cooperativeLoans/{loanId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidLoan(request.resource.data);
+      allow update: if isAuthenticated() && isValidLoan(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /cooperativeLoanRepayments/{repaymentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidRepayment(request.resource.data);
+      allow update: if isAuthenticated() && isValidRepayment(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /cooperativeInvestments/{investmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidInvestment(request.resource.data);
+      allow update: if isAuthenticated() && isValidInvestment(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /cooperative-transactions/{txId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow update: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "entities": {
+    "CurrencyValues": {
+      "title": "Currency Values",
+      "description": "Monetary values in multiple currencies",
+      "type": "object",
+      "properties": {
+        "kip": { "type": "number" },
+        "thb": { "type": "number" },
+        "usd": { "type": "number" },
+        "cny": { "type": "number" }
+      }
+    },
+    "CooperativeMember": {
+      "title": "Cooperative Member",
+      "description": "A member of the cooperative",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string" },
+        "name": { "type": "string" },
+        "joinDate": { "type": "string", "format": "date-time" },
+        "deposits": { "$ref": "CurrencyValues" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "name", "joinDate"]
+    },
+    "CooperativeDeposit": {
+      "title": "Cooperative Deposit",
+      "description": "A deposit or withdrawal by a member",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string" },
+        "memberName": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "kip": { "type": "number" },
+        "thb": { "type": "number" },
+        "usd": { "type": "number" },
+        "cny": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "date"]
+    },
+    "Loan": {
+      "title": "Loan",
+      "description": "A loan issued by the cooperative",
+      "type": "object",
+      "properties": {
+        "loanCode": { "type": "string" },
+        "memberId": { "type": "string" },
+        "debtorName": { "type": "string" },
+        "amount": { "$ref": "CurrencyValues" },
+        "repaymentAmount": { "$ref": "CurrencyValues" },
+        "purpose": { "type": "string" },
+        "applicationDate": { "type": "string", "format": "date-time" },
+        "loanType": { "type": "string", "enum": ["MURABAHA", "QARD_HASAN"] },
+        "durationYears": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["loanCode", "amount", "applicationDate", "loanType"]
+    },
+    "LoanRepayment": {
+      "title": "Loan Repayment",
+      "description": "A repayment for a loan",
+      "type": "object",
+      "properties": {
+        "loanId": { "type": "string" },
+        "repaymentDate": { "type": "string", "format": "date-time" },
+        "amountPaid": { "$ref": "CurrencyValues" },
+        "note": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["loanId", "repaymentDate", "amountPaid"]
+    },
+    "CooperativeInvestment": {
+      "title": "Cooperative Investment",
+      "description": "An investment made by the cooperative",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "amount": { "$ref": "CurrencyValues" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "amount", "date"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A journal entry transaction",
+      "type": "object",
+      "properties": {
+        "transactionGroupId": { "type": "string" },
+        "accountId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "amount": { "$ref": "CurrencyValues" },
+        "type": { "type": "string", "enum": ["debit", "credit"] },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["transactionGroupId", "accountId", "date", "amount", "type"]
+    },
+    "CooperativeAccount": {
+      "title": "Cooperative Account",
+      "description": "An account in the chart of accounts",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["asset", "liability", "equity", "income", "expense"] }
+      },
+      "required": ["code", "name", "type"]
+    }
+  },
+  "firestore": {
+    "cooperativeAccounts": {
+      "schema": "CooperativeAccount",
+      "description": "Chart of accounts for the cooperative"
+    },
+    "cooperativeMembers": {
+      "schema": "CooperativeMember",
+      "description": "List of cooperative members"
+    },
+    "cooperativeDeposits": {
+      "schema": "CooperativeDeposit",
+      "description": "History of deposits and withdrawals"
+    },
+    "cooperativeLoans": {
+      "schema": "Loan",
+      "description": "List of loans"
+    },
+    "cooperativeLoanRepayments": {
+      "schema": "LoanRepayment",
+      "description": "History of loan repayments"
+    },
+    "cooperativeInvestments": {
+      "schema": "CooperativeInvestment",
+      "description": "List of cooperative investments"
+    },
+    "cooperativeWithdrawals": {
+      "schema": "CooperativeDeposit",
+      "description": "History of withdrawals"
+    },
+    "cooperative-transactions": {
+      "schema": "Transaction",
+      "description": "Journal entry transactions for accounting"
+    }
+  }
+}
