@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ArrowLeft, FileText, Handshake, BookOpen, FilePieChart, Landmark, Users, TrendingUp, Wallet, CheckCircle2, AlertCircle, Calendar, Building } from "lucide-react"
+import { ArrowLeft, FileText, Handshake, BookOpen, FilePieChart, Landmark, Users, TrendingUp, Wallet, CheckCircle2, AlertCircle, Calendar, Building, Receipt } from "lucide-react"
 import { Link } from 'react-router-dom'
 import { Button } from "@/components/ui/button"
 import { listenToCooperativeTransactions, getAccountBalances } from '@/services/cooperativeAccountingService'
@@ -154,6 +154,29 @@ export default function ReportsDashboard() {
                 <div className="pt-2 border-t flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground uppercase">ລາຍການທັງໝົດ</span>
                   <span className="text-sm font-bold font-mono">{metrics.loanTransactionCount} ລາຍການ</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/tee/cooperative/reports/loan-payments">
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm overflow-hidden group border-l-4 border-l-green-500">
+              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Receipt className="h-24 w-24 text-green-600" />
+              </div>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold text-green-700">ສະຫຼຸບການຊຳລະສິນເຊື່ອ</CardTitle>
+                <div className="bg-green-100 p-2 rounded-lg z-10">
+                  <Receipt className="h-6 w-6 text-green-600" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground text-sm leading-relaxed font-medium">
+                  ເບິ່ງລາຍຊື່ຜູ້ຊຳລະເງິນກູ້ໃນແຕ່ລະເດືອນ ແລະ ນອດລວມການຊຳລະທັງໝົດ
+                </p>
+                <div className="pt-2 border-t flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground uppercase text-green-600">ຈຳນວນຜູ້ຊຳລະ</span>
+                  <span className="text-sm font-bold font-mono text-green-700">{repayments.length} ລາຍການ</span>
                 </div>
               </CardContent>
             </Card>
