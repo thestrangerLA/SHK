@@ -55,10 +55,18 @@ export function EditMemberDialog({ open, onOpenChange, member, onMemberUpdate }:
 
     const handleSave = async () => {
         try {
+            // Ensure joinDate is a valid Date object
+            const validJoinDate = formData.joinDate ? new Date(formData.joinDate) : new Date();
+            
+            if (isNaN(validJoinDate.getTime())) {
+                toast({ title: 'ວັນທີສະໝັກບໍ່ຖືກຕ້ອງ', variant: 'destructive' });
+                return;
+            }
+
             const dataToUpdate = {
                 memberId: formData.memberId,
                 name: formData.name,
-                joinDate: startOfDay(new Date(formData.joinDate)),
+                joinDate: startOfDay(validJoinDate),
                 deposits: formData.deposits
             };
             await updateCooperativeMember(member.id, dataToUpdate);
@@ -96,7 +104,15 @@ export function EditMemberDialog({ open, onOpenChange, member, onMemberUpdate }:
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={new Date(formData.joinDate)} onSelect={(d) => handleChange('joinDate', d)} initialFocus />
+                                <Calendar 
+                                    mode="single" 
+                                    selected={new Date(formData.joinDate)} 
+                                    onSelect={(d) => handleChange('joinDate', d)} 
+                                    initialFocus 
+                                    captionLayout="dropdown"
+                                    fromYear={2000}
+                                    toYear={new Date().getFullYear() + 10}
+                                />
                             </PopoverContent>
                         </Popover>
                     </div>

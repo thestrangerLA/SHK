@@ -125,8 +125,8 @@ export default function NewLoanPage() {
         }
 
         const loanData: Omit<Loan, 'id' | 'createdAt' | 'status'> = {
-            memberId: borrowerType === 'member' && selectedMemberId ? selectedMemberId : undefined,
-            debtorName: borrowerType === 'debtor' ? debtorName : undefined,
+            memberId: borrowerType === 'member' && selectedMemberId ? selectedMemberId : null,
+            debtorName: borrowerType === 'debtor' ? debtorName : null,
             loanCode,
             amount: { ...principalAmount, cny: 0 },
             repaymentAmount: { ...repaymentAmount, cny: 0 },

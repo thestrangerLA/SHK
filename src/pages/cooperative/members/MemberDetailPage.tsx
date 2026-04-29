@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowLeft, Users, Trash2, PlusCircle, Edit, MinusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, getYear, getMonth } from "date-fns";
-import { LAO_MONTHS } from '@/lib/date-utils';
+import { LAO_MONTHS, calculateMembershipDuration } from '@/lib/date-utils';
 import type { CooperativeMember, CooperativeDeposit, CooperativeWithdrawal, Loan, CurrencyValues } from '@/lib/types';
 import { listenToCooperativeDepositsForMember, getCooperativeMember } from '@/services/cooperativeMemberService';
 import { addCooperativeDeposit, deleteCooperativeDeposit } from '@/services/cooperativeDepositService';
@@ -244,7 +244,14 @@ export default function MemberDetailPage() {
                             <Card>
                                 <CardHeader className="pb-2">
                                     <CardDescription>ວັນທີສະໝັກ</CardDescription>
-                                    <CardTitle className="text-2xl">{format(new Date(member.joinDate), 'dd')}/{getMonth(new Date(member.joinDate)) + 1}/{getYear(new Date(member.joinDate)) + 543}</CardTitle>
+                                    <CardTitle className="text-2xl">
+                                        {member.joinDate && !isNaN(new Date(member.joinDate).getTime()) 
+                                            ? `${format(new Date(member.joinDate), 'dd')}/${getMonth(new Date(member.joinDate)) + 1}/${getYear(new Date(member.joinDate)) + 543}`
+                                            : 'ບໍ່ລະບຸ'}
+                                    </CardTitle>
+                                    <p className="text-sm text-primary font-medium mt-1">
+                                        ເປັນສະມາຊິກມາແລ້ວ: {member.joinDate ? calculateMembershipDuration(member.joinDate) : 'ບໍ່ລະບຸ'}
+                                    </p>
                                 </CardHeader>
                             </Card>
                         </div>

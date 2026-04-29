@@ -13,124 +13,154 @@ import { UserNav } from "@/components/UserNav"
 
 export default function CooperativePage() {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <div className="flex min-h-screen w-full flex-col bg-gradient-to-br from-background via-background to-primary/5">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-md px-4 sm:px-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" asChild>
             <Link to="/">
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
               <span className="sr-only">ກັບໄປໜ້າຫຼັກ</span>
             </Link>
           </Button>
-          <div className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-purple-500" />
-            <h1 className="text-xl font-bold tracking-tight font-headline">ລະບົບສະຫະກອນອິດສະລາມ</h1>
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 p-2 rounded-xl">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-gradient">ລະບົບສະຫະກອນອິດສະລາມ</h1>
           </div>
         </div>
         <UserNav />
       </header>
-      <main className="flex flex-1 flex-col items-center justify-center gap-8 p-4">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 w-full max-w-7xl">
+      <main className="flex-1 flex flex-col items-center py-12 px-4">
+        <div className="text-center mb-12 space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">ຍິນດີຕ້ອນຮັບເຂົ້າສູ່ລະບົບ</h2>
+          <p className="text-muted-foreground text-lg">ເລືອກເມນູທີ່ທ່ານຕ້ອງການຈັດການຂໍ້ມູນ</p>
+        </div>
+        
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full max-w-7xl">
           <Link to="/tee/cooperative/accounting">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline">ການບັນຊີ</CardTitle>
-                <Landmark className="h-8 w-8 text-primary" />
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ການບັນຊີ</CardTitle>
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Landmark className="h-6 w-6 text-blue-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ และ ເບິ່ງພາບລວມການເງິນຂອງສະຫະກອນ
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ ແລະ ເບິ່ງພາບລວມການເງິນຂອງສະຫະກອນ
                 </p>
               </CardContent>
             </Card>
           </Link>
+          
           <Link to="/tee/cooperative/income-expense">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline">ລາຍຮັບ-ລາຍຈ່າຍ</CardTitle>
-                <BookOpen className="h-8 w-8 text-primary" />
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ລາຍຮັບ-ລາຍຈ່າຍ</CardTitle>
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <BookOpen className="h-6 w-6 text-green-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ເບິ່ງລາຍການເຄື່ອນໄຫວບັນຊີທັງໝົດ
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  ເບິ່ງລາຍການເຄື່ອນໄຫວບັນຊີທັງໝົດ ແລະ ປະຫວັດທຸລະກຳ
                 </p>
               </CardContent>
             </Card>
           </Link>
+
           <Link to="/tee/cooperative/members">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline">ສະມາຊິກ ແລະ ເງິນຝາກ</CardTitle>
-                <Users className="h-8 w-8 text-primary" />
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ສະມາຊິກ ແລະ ເງິນຝາກ</CardTitle>
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <Users className="h-6 w-6 text-purple-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ຈັດການຂໍ້ມູນສະມາຊິກ ແລະ ບັນທຶກເງິນຝາກ
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  ຈັດການຂໍ້ມູນສະມາຊິກ, ປະຫວັດການຝາກ-ຖອນ ແລະ ຍອດເງິນຄົງເຫຼືອ
                 </p>
               </CardContent>
             </Card>
           </Link>
+
           <Link to="/tee/cooperative/loans">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline">ລະບົບສິນເຊື່ອ</CardTitle>
-                <Handshake className="h-8 w-8 text-primary" />
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ລະບົບສິນເຊື່ອ</CardTitle>
+                <div className="bg-orange-100 p-2 rounded-lg">
+                  <Handshake className="h-6 w-6 text-orange-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ສ້າງ ແລະ ຕິດຕາມສັນຍາສິນເຊື່ອ
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  ສ້າງສັນຍາສິນເຊື່ອ, ຕິດຕາມການຊຳລະ ແລະ ຄິດໄລ່ກຳໄລ
                 </p>
               </CardContent>
             </Card>
           </Link>
+
           <Link to="/tee/cooperative/investments">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline">ການລົງທຶນ</CardTitle>
-                <TrendingUp className="h-8 w-8 text-primary" />
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ການລົງທຶນ</CardTitle>
+                <div className="bg-indigo-100 p-2 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-indigo-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ບັນທຶກ ແລະ ຕິດຕາມການລົງທຶນຂອງສະຫະກອນ
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  ບັນທຶກ ແລະ ຕິດຕາມການລົງທຶນຂອງສະຫະກອນໃນໂຄງການຕ່າງໆ
                 </p>
               </CardContent>
             </Card>
           </Link>
-          <Link to="/tee/cooperative/accounting">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline">ສິນຊັບຄົງທີ່</CardTitle>
-                <Building className="h-8 w-8 text-primary" />
+
+          <Link to="/tee/cooperative/fixed-assets">
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ສິນຊັບຄົງທີ່</CardTitle>
+                <div className="bg-amber-100 p-2 rounded-lg">
+                  <Building className="h-6 w-6 text-amber-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ບັນທຶກ ແລະ ຕິດຕາມສິນຊັບຄົງທີ່ຂອງສະຫະກອນໃນໜ້າການບັນຊີ
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  ຈັດການ ແລະ ຕິດຕາມສິນຊັບຄົງທີ່, ຄ່າເສື່ອມລາຄາ ແລະ ອຸປະກອນ
                 </p>
               </CardContent>
             </Card>
           </Link>
-          <Link to="/tee/cooperative/reports/monthly">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full border-blue-200 bg-blue-50/30">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline text-blue-700">ລາຍງານຝາກ-ຖອນ</CardTitle>
-                <FileText className="h-8 w-8 text-blue-600" />
+
+          <Link to="/tee/cooperative/ar">
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-card/50 backdrop-blur-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ລູກໜີ້ການຄ້າ</CardTitle>
+                <div className="bg-rose-100 p-2 rounded-lg">
+                  <FileText className="h-6 w-6 text-rose-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ລາຍງານການຝາກ-ຖອນເງິນປະຈຳເດືອນ (12 ເດືອນ) ແລະ Export PDF
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  ຕິດຕາມລູກໜີ້ການຄ້າ, ໃບບິນຄ້າງຊຳລະ ແລະ ກຳນົດການຊຳລະເງິນ
                 </p>
               </CardContent>
             </Card>
           </Link>
-          <Link to="/tee/cooperative/accounting/reports">
-            <Card className="hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-2xl font-bold font-headline">ລາຍງານ</CardTitle>
-                <FilePieChart className="h-8 w-8 text-primary" />
+
+          <Link to="/tee/cooperative/reports" className="md:col-span-2 lg:col-span-3 xl:col-span-2">
+            <Card className="card-hover border-none shadow-sm cursor-pointer h-full bg-primary text-primary-foreground">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle className="text-xl font-bold">ລາຍງານທັງໝົດ</CardTitle>
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <FilePieChart className="h-6 w-6 text-white" />
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  ເບິ່ງລາຍງານ ແລະ ສະຫຼຸບຜົນປະກອບການ
+                <p className="text-sm text-primary-foreground/90 leading-relaxed">
+                  ສະຫຼຸບລາຍງານການຝາກ-ຖອນ, ສິນເຊື່ອ, ລາຍຮັບ-ລາຍຈ່າຍ ແລະ ຜົນປະກອບການ
                 </p>
               </CardContent>
             </Card>

@@ -81,6 +81,25 @@ export interface CooperativeInvestment {
   createdAt: Date;
 }
 
+export interface FixedAsset {
+  id: string;
+  code: string;
+  name: string;
+  purchaseDate: Date;
+  purchasePrice: CurrencyValues;
+  usefulLifeYears: number;
+  residualValue: CurrencyValues;
+  location: string;
+  status: 'active' | 'disposed' | 'maintenance';
+  createdAt: Date;
+}
+
+export interface DividendItem {
+  id: string;
+  name: string;
+  percentage: number;
+}
+
 export interface Account {
   id: string;
   code: string;
@@ -96,5 +115,27 @@ export interface Transaction {
   amount: CurrencyValues;
   type: 'debit' | 'credit';
   description: string;
+  createdAt: Date;
+}
+
+export interface TradeReceivable {
+  id: string;
+  customerName: string;
+  invoiceNumber: string;
+  amount: CurrencyValues;
+  cost?: CurrencyValues;
+  date: Date;
+  dueDate: Date;
+  status: 'pending' | 'paid' | 'overdue';
+  createdAt: Date;
+}
+
+export interface TradeReceivablePayment {
+  id: string;
+  arId: string;
+  paymentDate: Date;
+  amountPaid: CurrencyValues;
+  note?: string;
+  transactionGroupId?: string;
   createdAt: Date;
 }

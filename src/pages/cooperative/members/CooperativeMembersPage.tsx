@@ -19,7 +19,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfDay, isWithinInterval, startOfMonth, endOfMonth, getYear, setMonth, getMonth } from "date-fns";
-import { LAO_MONTHS } from '@/lib/date-utils';
+import { LAO_MONTHS, calculateMembershipDuration } from '@/lib/date-utils';
 import { ArrowLeft, Users, Calendar as CalendarIcon, Trash2, PlusCircle, MoreHorizontal, PiggyBank, ChevronDown, Search, TrendingUp, FileText } from "lucide-react";
 import type { CooperativeMember, CooperativeDeposit, Loan, LoanRepayment, CooperativeInvestment, CurrencyValues } from '@/lib/types';
 import { listenToCooperativeMembers, addCooperativeMember, deleteCooperativeMember } from '@/services/cooperativeMemberService';
@@ -104,7 +104,15 @@ const AddMemberDialog = ({ onAddMember }: { onAddMember: (member: Omit<Cooperati
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={joinDate} onSelect={setJoinDate} initialFocus />
+                                <Calendar 
+                                    mode="single" 
+                                    selected={joinDate} 
+                                    onSelect={setJoinDate} 
+                                    initialFocus 
+                                    captionLayout="dropdown"
+                                    fromYear={2000}
+                                    toYear={new Date().getFullYear() + 10}
+                                />
                             </PopoverContent>
                         </Popover>
                     </div>
@@ -161,13 +169,17 @@ export default function CooperativeMembersPage() {
     }, []);
     
     const membersWithTotalDeposits = useMemo(() => {
-        const filteredMembers = members.filter(member => 
-            member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            member.memberId.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        const endOfSelectedMonth = endOfMonth(displayMonth);
+        
+        const filteredMembers = members.filter(member => {
+            const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                member.memberId.toLowerCase().includes(searchQuery.toLowerCase());
+            const joinedBeforeOrInMonth = new Date(member.joinDate) <= endOfSelectedMonth;
+            return matchesSearch && joinedBeforeOrInMonth;
+        });
 
         return filteredMembers.map(member => {
-            const memberDeposits = deposits.filter(d => d.memberId === member.id);
+            const memberDeposits = deposits.filter(d => d.memberId === member.id && new Date(d.date) <= endOfSelectedMonth);
             const totalDeposits = {
                 kip: (member.deposits?.kip || 0) + memberDeposits.reduce((sum, d) => sum + (d.kip || 0), 0),
                 thb: (member.deposits?.thb || 0) + memberDeposits.reduce((sum, d) => sum + (d.thb || 0), 0),
@@ -175,9 +187,9 @@ export default function CooperativeMembersPage() {
                 cny: (member.deposits?.cny || 0) + memberDeposits.reduce((sum, d) => sum + (d.cny || 0), 0),
             };
             const shares = Math.floor(totalDeposits.kip / 100000);
-            return { ...member, totalDeposits, shares, deposits: memberDeposits };
+            return { ...member, totalDeposits, shares, deposits: deposits.filter(d => d.memberId === member.id) };
         }).sort((a,b) => (a.memberId > b.memberId) ? 1 : -1);
-    }, [members, deposits, searchQuery]);
+    }, [members, deposits, searchQuery, displayMonth]);
     
     const filteredDeposits = (memberDeposits: CooperativeDeposit[]) => {
         const start = startOfMonth(displayMonth);
@@ -376,18 +388,23 @@ export default function CooperativeMembersPage() {
     };
     
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+        <div className="flex min-h-screen w-full flex-col bg-gradient-to-br from-background via-background to-primary/5">
+            <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-md px-4 sm:px-6">
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" asChild>
                         <Link to="/tee/cooperative">
-                            <ArrowLeft className="h-4 w-4" />
+                            <ArrowLeft className="h-5 w-5" />
                         </Link>
                     </Button>
-                    <h1 className="text-xl font-bold tracking-tight">ລະບົບບັນຊີສະມາຊິກ ແລະ ເງິນຝາກ</h1>
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-xl">
+                            <Users className="h-6 w-6 text-primary" />
+                        </div>
+                        <h1 className="text-xl font-bold tracking-tight">ລະບົບບັນຊີສະມາຊິກ ແລະ ເງິນຝາກ</h1>
+                    </div>
                 </div>
-                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" asChild>
+                 <div className="flex items-center gap-3">
+                    <Button variant="outline" size="sm" asChild className="hidden md:flex">
                         <Link to="/tee/cooperative/reports/monthly">
                             <FileText className="mr-2 h-4 w-4" />
                             ລາຍງານປະຈຳເດືອນ
@@ -398,60 +415,83 @@ export default function CooperativeMembersPage() {
                     <UserNav />
                 </div>
             </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0">
-                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
-                    <Card>
+            <main className="flex-1 p-4 sm:px-6 md:py-8">
+                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                    <Card className="card-hover border-none shadow-sm bg-card/50 backdrop-blur-sm">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">ສະມາຊິກທັງໝົດ</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <div className="bg-blue-100 p-1.5 rounded-lg">
+                                <Users className="h-4 w-4 text-blue-600" />
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{members.length} ຄົນ</div>
+                            <div className="text-3xl font-bold">{membersWithTotalDeposits.length} <span className="text-sm font-normal text-muted-foreground">ຄົນ</span></div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="card-hover border-none shadow-sm bg-card/50 backdrop-blur-sm">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">ຍອດເງິນຝາກລວມທັງໝົດ</CardTitle>
-                            <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                            <div className="bg-purple-100 p-1.5 rounded-lg">
+                                <PiggyBank className="h-4 w-4 text-purple-600" />
+                            </div>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 gap-x-4">
-                            {Object.entries(grandTotalDeposits).filter(([,v]) => (v as number) > 0).map(([c, v]) => <p key={c} className="text-sm font-bold">{String(c).toUpperCase()}: {formatCurrency(v as number)}</p>)}
+                        <CardContent className="space-y-1">
+                            {Object.entries(grandTotalDeposits).filter(([,v]) => (v as number) > 0).map(([c, v]) => (
+                                <div key={c} className="flex justify-between items-center">
+                                    <span className="text-xs font-medium text-muted-foreground uppercase">{c}</span>
+                                    <span className="text-sm font-bold">{formatCurrency(v as number)}</span>
+                                </div>
+                            ))}
                         </CardContent>
                     </Card>
-                    <Card className="cursor-pointer hover:bg-green-50/50 transition-colors" onClick={() => setViewingStatsType('deposits')}>
+                    <Card className="card-hover border-none shadow-sm bg-green-50/50 backdrop-blur-sm cursor-pointer" onClick={() => setViewingStatsType('deposits')}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-green-600">ຍອດຝາກປະຈຳເດືອນ</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            <CardTitle className="text-sm font-medium text-green-700">ຍອດຝາກປະຈຳເດືອນ</CardTitle>
+                            <div className="bg-green-100 p-1.5 rounded-lg">
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                            </div>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 gap-x-4">
-                            {Object.entries(monthlyStats.deposits).filter(([,v]) => (v as number) > 0).map(([c, v]) => <p key={c} className="text-sm font-bold text-green-600">{String(c).toUpperCase()}: {formatCurrency(v as number)}</p>)}
+                        <CardContent className="space-y-1">
+                            {Object.entries(monthlyStats.deposits).filter(([,v]) => (v as number) > 0).map(([c, v]) => (
+                                <div key={c} className="flex justify-between items-center">
+                                    <span className="text-xs font-medium text-green-600/70 uppercase">{c}</span>
+                                    <span className="text-sm font-bold text-green-700">{formatCurrency(v as number)}</span>
+                                </div>
+                            ))}
                             {Object.values(monthlyStats.deposits).every(v => v === 0) && <p className="text-sm text-muted-foreground">ບໍ່ມີລາຍການ</p>}
                         </CardContent>
                     </Card>
-                    <Card className="cursor-pointer hover:bg-red-50/50 transition-colors" onClick={() => setViewingStatsType('withdrawals')}>
+                    <Card className="card-hover border-none shadow-sm bg-red-50/50 backdrop-blur-sm cursor-pointer" onClick={() => setViewingStatsType('withdrawals')}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-red-600">ຍອດຖອນປະຈຳເດືອນ</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
+                            <CardTitle className="text-sm font-medium text-red-700">ຍອດຖອນປະຈຳເດືອນ</CardTitle>
+                            <div className="bg-red-100 p-1.5 rounded-lg">
+                                <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
+                            </div>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 gap-x-4">
-                            {Object.entries(monthlyStats.withdrawals).filter(([,v]) => (v as number) > 0).map(([c, v]) => <p key={c} className="text-sm font-bold text-red-600">{String(c).toUpperCase()}: {formatCurrency(v as number)}</p>)}
+                        <CardContent className="space-y-1">
+                            {Object.entries(monthlyStats.withdrawals).filter(([,v]) => (v as number) > 0).map(([c, v]) => (
+                                <div key={c} className="flex justify-between items-center">
+                                    <span className="text-xs font-medium text-red-600/70 uppercase">{c}</span>
+                                    <span className="text-sm font-bold text-red-700">{formatCurrency(v as number)}</span>
+                                </div>
+                            ))}
                             {Object.values(monthlyStats.withdrawals).every(v => v === 0) && <p className="text-sm text-muted-foreground">ບໍ່ມີລາຍການ</p>}
                         </CardContent>
                     </Card>
                 </div>
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
+                <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                    <CardHeader className="pb-4">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <CardTitle>ລາຍຊື່ສະມາຊິກ</CardTitle>
+                                <CardTitle className="text-xl">ລາຍຊື່ສະມາຊິກ</CardTitle>
                                 <CardDescription>ກົດທີ່ລາຍການເພື່ອເບິ່ງປະຫວັດການຝາກເງິນ</CardDescription>
                             </div>
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <div className="relative w-full md:w-80">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="search"
                                     placeholder="ຄົ້ນຫາຕາມຊື່ ຫຼື ລະຫັດ..."
-                                    className="pl-8 sm:w-[300px]"
+                                    className="pl-9 h-10 bg-background/50"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -469,7 +509,12 @@ export default function CooperativeMembersPage() {
                                             <div className="flex justify-between items-center w-full">
                                                 <div className="text-left">
                                                     <p className="font-semibold">{member.name} <span className="font-mono text-xs text-muted-foreground">({member.memberId})</span></p>
-                                                    <p className="text-sm text-muted-foreground">ສະໝັກວັນທີ: {format(new Date(member.joinDate), 'dd/MM/yyyy')}</p>
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-muted-foreground">
+                                                        <span>ສະໝັກວັນທີ: {member.joinDate && !isNaN(new Date(member.joinDate).getTime()) ? format(new Date(member.joinDate), 'dd/MM/yyyy') : 'ບໍ່ລະບຸ'}</span>
+                                                        <span className="text-[10px] sm:text-xs bg-primary/5 px-2 py-0.5 rounded-full text-primary font-medium w-fit">
+                                                            ເປັນສະມາຊິກມາແລ້ວ: {member.joinDate ? calculateMembershipDuration(member.joinDate, endOfMonth(displayMonth)) : 'ບໍ່ລະບຸ'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <div className="flex items-center gap-4 mr-8">
                                                     <div className="text-right text-sm">

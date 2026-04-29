@@ -53,6 +53,10 @@ export default function LoanDetailPage() {
     const [isEditingDuration, setIsEditingDuration] = useState(false);
     const [editedDuration, setEditedDuration] = useState<number>(0);
 
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editedLoanCode, setEditedLoanCode] = useState('');
+    const [editedPurpose, setEditedPurpose] = useState('');
+
 
     useEffect(() => {
         if (!id) return;
@@ -61,6 +65,8 @@ export default function LoanDetailPage() {
             if (loanData) {
                 setLoan(loanData);
                 setEditedDuration(loanData.durationYears || 0);
+                setEditedLoanCode(loanData.loanCode || '');
+                setEditedPurpose(loanData.purpose || '');
                 if (loanData.memberId && (!member || member.id !== loanData.memberId)) {
                     const memberData = await getCooperativeMember(loanData.memberId);
                     setMember(memberData);
@@ -119,6 +125,38 @@ export default function LoanDetailPage() {
             setIsEditingDuration(false);
         } catch (error) {
             toast({ title: 'ເກີດຂໍ້ຜິດພາດ', variant: 'destructive' });
+        }
+    };
+
+    const handleSaveDetails = async () => {
+        if (!loan) return;
+        try {
+            await updateLoan(loan.id, { 
+                loanCode: editedLoanCode,
+                purpose: editedPurpose
+            });
+            toast({ title: 'ອັບເດດຂໍ້ມູນສິນເຊື່ອສຳເລັດ' });
+            setIsEditingDetails(false);
+        } catch (error) {
+            toast({ title: 'ເກີດຂໍ້ຜິດພາດ', variant: 'destructive' });
+        }
+    };
+
+    const handleApproveLoan = async () => {
+        if (!loan) return;
+        try {
+            await updateLoan(loan.id, { status: 'approved' });
+            toast({
+                title: "ອະນຸມັດສຳເລັດ",
+                description: "ສິນເຊື່ອໄດ້ຮັບການອະນຸມັດ ແລະ ບັນທຶກລາຍການບັນຊີແລ້ວ.",
+            });
+        } catch (error) {
+            console.error("Error approving loan:", error);
+            toast({
+                title: "ເກີດຂໍ້ຜິດພາດ",
+                description: "ບໍ່ສາມາດອະນຸມັດສິນເຊື່ອໄດ້.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -206,16 +244,40 @@ export default function LoanDetailPage() {
                         <CardHeader>
                             <CardTitle className="flex justify-between items-center">
                                 <span>ສະຫຼຸບຂໍ້ມູນສິນເຊື່ອ</span>
-                                <Badge variant={totalOutstandingValue <= 0 ? 'default' : 'destructive'}>
-                                    {totalOutstandingValue <= 0 ? 'ຈ່າຍໝົດແລ້ວ' : 'ຍັງຄ້າງ'}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                    {loan.status === 'pending' && (
+                                        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleApproveLoan}>ອະນຸມັດ (Approve)</Button>
+                                    )}
+                                    {isEditingDetails ? (
+                                        <Button size="sm" onClick={handleSaveDetails}><Save className="mr-2 h-4 w-4"/>ບັນທຶກ</Button>
+                                    ) : (
+                                        <Button size="sm" variant="outline" onClick={() => setIsEditingDetails(true)}><Edit className="mr-2 h-4 w-4"/>ແກ້ໄຂ</Button>
+                                    )}
+                                    <Badge variant={loan.status === 'pending' ? 'outline' : (totalOutstandingValue <= 0 ? 'default' : 'destructive')}>
+                                        {loan.status === 'pending' ? 'ລໍການອະນຸມັດ' : (totalOutstandingValue <= 0 ? 'ຈ່າຍໝົດແລ້ວ' : 'ຍັງຄ້າງ')}
+                                    </Badge>
+                                </div>
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-semibold">ລະຫັດສິນເຊື່ອ:</span> {loan.loanCode}</div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-semibold whitespace-nowrap">ລະຫັດສິນເຊື່ອ:</span>
+                                    {isEditingDetails ? (
+                                        <Input value={editedLoanCode} onChange={e => setEditedLoanCode(e.target.value)} className="h-8" />
+                                    ) : (
+                                        <span>{loan.loanCode}</span>
+                                    )}
+                                </div>
                                 <div><span className="font-semibold">ຜູ້ກູ້ຢືມ:</span> {loan.memberId ? member?.name : loan.debtorName || '...'}</div>
-                                <div><span className="font-semibold">ຈຸດປະສົງ:</span> {loan.purpose || '-'}</div>
+                                <div className="flex items-center gap-2 col-span-1 md:col-span-2">
+                                    <span className="font-semibold whitespace-nowrap">ຈຸດປະສົງ:</span>
+                                    {isEditingDetails ? (
+                                        <Input value={editedPurpose} onChange={e => setEditedPurpose(e.target.value)} className="h-8 flex-1" />
+                                    ) : (
+                                        <span>{loan.purpose || '-'}</span>
+                                    )}
+                                </div>
                             </div>
                             <Table className="mt-4">
                                 <TableHeader>

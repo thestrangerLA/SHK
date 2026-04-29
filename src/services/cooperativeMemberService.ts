@@ -7,7 +7,7 @@ import { collection, addDoc, deleteDoc, doc, onSnapshot, getDoc, updateDoc, getD
 import { db } from '../firebase';
 import type { CooperativeMember, CooperativeDeposit } from '../lib/types';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
-import { createTransaction } from './cooperativeAccountingService';
+import { createMultiLegTransaction } from './cooperativeAccountingService';
 
 const COLLECTION_NAME = 'cooperativeMembers';
 
@@ -34,10 +34,18 @@ export const addCooperativeMember = async (member: Omit<CooperativeMember, 'id' 
 
     // Automatically create accounting transaction for initial deposits
     if (member.deposits && (member.deposits.kip > 0 || member.deposits.thb > 0 || member.deposits.usd > 0 || member.deposits.cny > 0)) {
-      await createTransaction(
-        'cash',
-        'capital',
-        member.deposits,
+      const amount = member.deposits;
+      await createMultiLegTransaction(
+        [
+          { accountId: 'cash', type: 'debit', amount },
+          { accountId: 'deposits_payable', type: 'debit', amount },
+          { accountId: 'capital', type: 'credit', amount: { 
+            kip: amount.kip * 2, 
+            thb: amount.thb * 2, 
+            usd: amount.usd * 2, 
+            cny: amount.cny * 2 
+          } }
+        ],
         `ເງິນຝາກເລີ່ມຕົ້ນສະມາຊິກ: ${member.name}`,
         member.joinDate
       );

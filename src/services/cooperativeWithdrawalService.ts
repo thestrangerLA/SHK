@@ -7,7 +7,7 @@ import { collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy }
 import { db } from '../firebase';
 import type { CooperativeWithdrawal } from '../lib/types';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
-import { createTransaction } from './cooperativeAccountingService';
+import { createMultiLegTransaction } from './cooperativeAccountingService';
 
 const COLLECTION_NAME = 'cooperativeWithdrawals';
 
@@ -54,11 +54,21 @@ export const addCooperativeWithdrawal = async (withdrawal: Omit<CooperativeWithd
     });
 
     // Automatically create accounting transaction
-    // Debit Share Capital (301), Credit Cash (101)
-    await createTransaction(
-      'capital',
-      'cash',
-      { kip: withdrawal.kip || 0, thb: withdrawal.thb || 0, usd: withdrawal.usd || 0, cny: withdrawal.cny || 0 },
+    // 1. Credit Cash (101) - Decrease cash
+    // 2. Credit Deposits Payable (201) - Decrease deposit balance (Debit-normal in this system)
+    // 3. Debit Share Capital (301) - Offset both
+    const amount = { kip: withdrawal.kip || 0, thb: withdrawal.thb || 0, usd: withdrawal.usd || 0, cny: withdrawal.cny || 0 };
+    await createMultiLegTransaction(
+      [
+        { accountId: 'cash', type: 'credit', amount },
+        { accountId: 'deposits_payable', type: 'credit', amount },
+        { accountId: 'capital', type: 'debit', amount: { 
+          kip: amount.kip * 2, 
+          thb: amount.thb * 2, 
+          usd: amount.usd * 2, 
+          cny: amount.cny * 2 
+        } }
+      ],
       `ຖອນເງິນສະມາຊິກ: ${withdrawal.memberName}`,
       withdrawal.date
     );

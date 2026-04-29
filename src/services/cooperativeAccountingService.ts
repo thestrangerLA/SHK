@@ -52,7 +52,37 @@ export const createTransaction = async (debitAccountId: string, creditAccountId:
   });
 
   try {
-    return await batch.commit();
+    await batch.commit();
+    return groupId;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, COLLECTION_NAME);
+  }
+};
+
+export const createMultiLegTransaction = async (
+  entries: { accountId: string; type: 'debit' | 'credit'; amount: CurrencyValues }[],
+  description: string,
+  date: Date = new Date()
+) => {
+  const batch = writeBatch(db);
+  const groupId = uuidv4();
+
+  entries.forEach(entry => {
+    const ref = doc(collection(db, COLLECTION_NAME));
+    batch.set(ref, {
+      transactionGroupId: groupId,
+      accountId: entry.accountId,
+      date,
+      amount: entry.amount,
+      type: entry.type,
+      description,
+      createdAt: new Date(),
+    });
+  });
+
+  try {
+    await batch.commit();
+    return groupId;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, COLLECTION_NAME);
   }

@@ -5,29 +5,29 @@
 
 import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { CooperativeInvestment } from '../lib/types';
+import type { FixedAsset } from '../lib/types';
 import { handleFirestoreError, OperationType } from '../lib/firebase-utils';
 
-const COLLECTION_NAME = 'cooperativeInvestments';
+const COLLECTION_NAME = 'cooperativeFixedAssets';
 
-export const listenToCooperativeInvestments = (callback: (investments: CooperativeInvestment[]) => void) => {
+export const listenToFixedAssets = (callback: (assets: FixedAsset[]) => void) => {
   return onSnapshot(collection(db, COLLECTION_NAME), (snapshot) => {
-    const investments = snapshot.docs.map(doc => ({
+    const assets = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
-      date: doc.data().date?.toDate(),
+      purchaseDate: doc.data().purchaseDate?.toDate(),
       createdAt: doc.data().createdAt?.toDate(),
-    })) as CooperativeInvestment[];
-    callback(investments);
+    })) as FixedAsset[];
+    callback(assets);
   }, (error) => {
     handleFirestoreError(error, OperationType.GET, COLLECTION_NAME);
   });
 };
 
-export const addInvestment = async (investment: Omit<CooperativeInvestment, 'id' | 'createdAt'>) => {
+export const addFixedAsset = async (asset: Omit<FixedAsset, 'id' | 'createdAt'>) => {
   try {
     await addDoc(collection(db, COLLECTION_NAME), {
-      ...investment,
+      ...asset,
       createdAt: serverTimestamp(),
     });
   } catch (error) {
@@ -35,16 +35,16 @@ export const addInvestment = async (investment: Omit<CooperativeInvestment, 'id'
   }
 };
 
-export const updateInvestment = async (id: string, investment: Partial<CooperativeInvestment>) => {
+export const updateFixedAsset = async (id: string, asset: Partial<FixedAsset>) => {
   try {
-    const investmentRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(investmentRef, investment);
+    const assetRef = doc(db, COLLECTION_NAME, id);
+    await updateDoc(assetRef, asset);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, COLLECTION_NAME);
   }
 };
 
-export const deleteInvestment = async (id: string) => {
+export const deleteFixedAsset = async (id: string) => {
   try {
     await deleteDoc(doc(db, COLLECTION_NAME, id));
   } catch (error) {

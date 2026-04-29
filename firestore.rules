@@ -29,13 +29,11 @@ service cloud.firestore {
     // Helper Functions
     // ===============================================================
     function isAuthenticated() {
-      return request.auth != null;
+      return true; // Login system deleted - allow all
     }
 
     function isAdmin() {
-      return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         (request.auth.token.email == "teepmp1302@gmail.com" && request.auth.token.email_verified == true));
+      return true; // Login system deleted - allow all
     }
 
     function isValidCurrencyValues(data) {
@@ -101,64 +99,47 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
 
     match /cooperativeAccounts/{accountId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidAccount(request.resource.data);
-      allow update: if isAuthenticated() && isValidAccount(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     match /cooperativeMembers/{memberId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidMember(request.resource.data);
-      allow update: if isAuthenticated() && isValidMember(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     match /cooperativeDeposits/{depositId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidDeposit(request.resource.data);
-      allow update: if isAuthenticated() && isValidDeposit(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     match /cooperativeWithdrawals/{withdrawalId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidDeposit(request.resource.data);
-      allow update: if isAuthenticated() && isValidDeposit(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     match /cooperativeLoans/{loanId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidLoan(request.resource.data);
-      allow update: if isAuthenticated() && isValidLoan(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     match /cooperativeLoanRepayments/{repaymentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidRepayment(request.resource.data);
-      allow update: if isAuthenticated() && isValidRepayment(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     match /cooperativeInvestments/{investmentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidInvestment(request.resource.data);
-      allow update: if isAuthenticated() && isValidInvestment(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
     }
 
     match /cooperative-transactions/{txId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
-      allow update: if isAuthenticated() && isValidTransaction(request.resource.data);
-      allow delete: if isAdmin();
+      allow read, create, update, delete: if true;
+    }
+
+    match /cooperative_trade_receivables/{id} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /cooperative_ar_payments/{id} {
+      allow read, create, update, delete: if true;
     }
 
     // Default deny

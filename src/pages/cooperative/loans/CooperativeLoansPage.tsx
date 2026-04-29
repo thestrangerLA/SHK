@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, PlusCircle, MoreHorizontal, ChevronDown, Banknote, AlertTriangle, FileText, Search, TrendingUp, Download } from "lucide-react";
 import { format, getYear } from 'date-fns';
 import type { Loan, CooperativeMember, LoanRepayment, CurrencyValues } from '@/lib/types';
-import { listenToCooperativeLoans, deleteLoan, listenToAllRepayments } from '@/services/cooperativeLoanService';
+import { listenToCooperativeLoans, deleteLoan, listenToAllRepayments, updateLoan } from '@/services/cooperativeLoanService';
 import { listenToCooperativeMembers } from '@/services/cooperativeMemberService';
 import { Badge } from '@/components/ui/badge';
 import { useClientRouter } from '@/hooks/useClientRouter';
@@ -41,6 +41,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { UserNav } from '@/components/UserNav';
+import { useSearchParams } from 'react-router-dom';
 
 const formatCurrency = (value: number) => {
     if (isNaN(value)) return '0';
@@ -88,14 +89,16 @@ const LoanTable = ({
     loans, 
     memberMap, 
     handleRowClick, 
-    handleDeleteClick 
+    handleDeleteClick,
+    handleApproveLoan
 }: { 
     id?: string,
     loading: boolean, 
     loans: any[], 
     memberMap: Record<string, string>, 
     handleRowClick: (id: string) => void, 
-    handleDeleteClick: (e: React.MouseEvent, loan: Loan) => void 
+    handleDeleteClick: (e: React.MouseEvent, loan: Loan) => void,
+    handleApproveLoan: (loanId: string) => void
 }) => (
     <Card id={id}>
         <CardContent className="pt-6">
@@ -161,7 +164,9 @@ const LoanTable = ({
                                 <TableCell>{format(loan.applicationDate, 'dd/MM/yyyy')}</TableCell>
                                 <TableCell>
                                     <Badge variant={loan.calculatedStatus === 'ຈ່າຍໝົດແລ້ວ' ? 'default' : (loan.calculatedStatus === 'ລໍການອະນຸມັດ' ? 'outline' : 'destructive')}>
-                                        {loan.calculatedStatus}
+                                        {loan.calculatedStatus === 'ຍັງຄ້າງ' 
+                                            ? `ຈ່າຍແລ້ວ ${loan.paymentPercentage.toFixed(0)}%` 
+                                            : loan.calculatedStatus}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-right no-pdf">
@@ -175,6 +180,17 @@ const LoanTable = ({
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuGroup>
                                                 <DropdownMenuLabel>ການດຳເນີນການ</DropdownMenuLabel>
+                                                {loan.status === 'pending' && (
+                                                    <DropdownMenuItem 
+                                                        className="text-green-600 font-medium"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleApproveLoan(loan.id);
+                                                        }}
+                                                    >
+                                                        ອະນຸມັດ (Approve)
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem 
                                                     className="text-red-500"
                                                     onClick={(e) => handleDeleteClick(e, loan)}
@@ -201,13 +217,14 @@ export default function CooperativeLoansPage() {
     const [repayments, setRepayments] = useState<LoanRepayment[]>([]);
     const [members, setMembers] = useState<CooperativeMember[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchParams] = useSearchParams();
     const router = useClientRouter();
     const { toast } = useToast();
 
     const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
     const [selectedYear, setSelectedYear] = useState<number | null>(new Date().getFullYear());
     const [currencyFilter, setCurrencyFilter] = useState<'ALL' | 'KIP' | 'THB' | 'USD'>('ALL');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
     const [activeTab, setActiveTab] = useState('outstanding');
 
 
@@ -280,7 +297,15 @@ export default function CooperativeLoansPage() {
                 calculatedStatus = 'ຈ່າຍໝົດແລ້ວ';
             }
 
-            return { ...loan, totalPaid, outstandingBalance, profit, calculatedStatus };
+            let paymentPercentage = 0;
+            const primaryCurrency = currencies.find(c => (loan.repaymentAmount[c] || 0) > 0);
+            if (primaryCurrency) {
+                const totalToRepay = loan.repaymentAmount[primaryCurrency] || 0;
+                const paid = totalPaid[primaryCurrency] || 0;
+                paymentPercentage = totalToRepay > 0 ? (paid / totalToRepay) * 100 : 0;
+            }
+
+            return { ...loan, totalPaid, outstandingBalance, profit, calculatedStatus, paymentPercentage };
         });
 
         if (activeTab === 'outstanding') {
@@ -345,6 +370,23 @@ export default function CooperativeLoansPage() {
         }
     };
 
+    const handleApproveLoan = async (loanId: string) => {
+        try {
+            await updateLoan(loanId, { status: 'approved' });
+            toast({
+                title: "ອະນຸມັດສຳເລັດ",
+                description: "ສິນເຊື່ອໄດ້ຮັບການອະນຸມັດ ແລະ ບັນທຶກລາຍການບັນຊີແລ້ວ.",
+            });
+        } catch (error) {
+            console.error("Error approving loan:", error);
+            toast({
+                title: "ເກີດຂໍ້ຜິດພາດ",
+                description: "ບໍ່ສາມາດອະນຸມັດສິນເຊື່ອໄດ້.",
+                variant: "destructive",
+            });
+        }
+    };
+
     const exportToPDF = () => {
         const element = document.getElementById(`loan-table-${activeTab}`);
         if (!element) return;
@@ -363,30 +405,35 @@ export default function CooperativeLoansPage() {
     };
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+        <div className="flex min-h-screen w-full flex-col bg-gradient-to-br from-background via-background to-primary/5">
+            <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 backdrop-blur-md px-4 sm:px-6">
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" asChild>
                         <Link to="/tee/cooperative">
-                            <ArrowLeft className="h-4 w-4" />
+                            <ArrowLeft className="h-5 w-5" />
                         </Link>
                     </Button>
-                    <h1 className="text-xl font-bold tracking-tight">ລະບົບສິນເຊື່ອສະຫະກອນ</h1>
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-xl">
+                            <Banknote className="h-6 w-6 text-primary" />
+                        </div>
+                        <h1 className="text-xl font-bold tracking-tight">ລະບົບສິນເຊື່ອສະຫະກອນ</h1>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-3">
+                    <div className="relative hidden lg:block">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             type="search"
                             placeholder="ຄົ້ນຫາຊື່ ຫຼື ລະຫັດກູ້ຢືມ..."
-                            className="pl-8 sm:w-[200px] lg:w-[250px]"
+                            className="pl-9 h-10 w-[250px] bg-background/50"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="flex items-center gap-2 h-9">
                                 <span>{currencyFilter === 'ALL' ? 'ທຸກສະກຸນເງິນ' : currencyFilter}</span>
                                 <ChevronDown className="h-4 w-4" />
                             </Button>
@@ -400,7 +447,7 @@ export default function CooperativeLoansPage() {
                     </DropdownMenu>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="flex items-center gap-2 h-9">
                                 <span>{selectedYear ? `ປີ ${selectedYear + 543}` : 'ທຸກໆປີ'}</span>
                                 <ChevronDown className="h-4 w-4" />
                             </Button>
@@ -414,11 +461,11 @@ export default function CooperativeLoansPage() {
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button variant="outline" size="sm" onClick={exportToPDF}>
+                    <Button variant="outline" size="sm" onClick={exportToPDF} className="h-9">
                         <Download className="mr-2 h-4 w-4" />
                         Export PDF
                     </Button>
-                    <Button size="sm" asChild>
+                    <Button size="sm" asChild className="h-9">
                         <Link to="/tee/cooperative/loans/new">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             ສ້າງຄຳຮ້ອງສິນເຊື່ອ
@@ -427,19 +474,69 @@ export default function CooperativeLoansPage() {
                     <UserNav />
                 </div>
             </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <SummaryStatCard title="ສັນຍາທັງໝົດ" value={String(summary.totalLoanCount)} icon={<FileText className="h-4 w-4 text-muted-foreground" />}/>
-                    <MultiCurrencySummaryCard title="ຍອດເງິນກູ້ຄົງຄ້າງ" balances={summary.totalOutstanding} icon={<Banknote className="h-4 w-4 text-muted-foreground" />} />
-                    <MultiCurrencySummaryCard title="ລວມກຳໄລ" balances={summary.totalProfit} icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />} />
-                    <SummaryStatCard title="ໜີ້ຄ້າງຊຳລະ" value={String(summary.overdueCount)} icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}/>
+            <main className="flex-1 p-4 sm:px-6 md:py-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <Card className="card-hover border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">ສັນຍາທັງໝົດ</CardTitle>
+                            <div className="bg-blue-100 p-1.5 rounded-lg">
+                                <FileText className="h-4 w-4 text-blue-600" />
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{summary.totalLoanCount} <span className="text-sm font-normal text-muted-foreground">ສັນຍາ</span></div>
+                        </CardContent>
+                    </Card>
+                    <Card className="card-hover border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">ຍອດເງິນກູ້ຄົງຄ້າງ</CardTitle>
+                            <div className="bg-purple-100 p-1.5 rounded-lg">
+                                <Banknote className="h-4 w-4 text-purple-600" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-1">
+                            {Object.entries(summary.totalOutstanding).filter(([,v]) => (v as number) > 0).map(([c, v]) => (
+                                <div key={c} className="flex justify-between items-center">
+                                    <span className="text-xs font-medium text-muted-foreground uppercase">{c}</span>
+                                    <span className="text-sm font-bold">{formatCurrency(v as number)}</span>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                    <Card className="card-hover border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">ລວມກຳໄລ</CardTitle>
+                            <div className="bg-green-100 p-1.5 rounded-lg">
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-1">
+                            {Object.entries(summary.totalProfit).filter(([,v]) => (v as number) > 0).map(([c, v]) => (
+                                <div key={c} className="flex justify-between items-center">
+                                    <span className="text-xs font-medium text-muted-foreground uppercase">{c}</span>
+                                    <span className="text-sm font-bold text-green-600">{formatCurrency(v as number)}</span>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                    <Card className="card-hover border-none shadow-sm bg-red-50/50 backdrop-blur-sm">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-red-700">ໜີ້ຄ້າງຊຳລະ</CardTitle>
+                            <div className="bg-red-100 p-1.5 rounded-lg">
+                                <AlertTriangle className="h-4 w-4 text-red-600" />
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-red-700">{summary.overdueCount} <span className="text-sm font-normal text-red-600/70">ສັນຍາ</span></div>
+                        </CardContent>
+                    </Card>
                 </div>
                 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="flex items-center justify-between mb-4">
-                        <TabsList>
-                            <TabsTrigger value="outstanding">ຍັງຄ້າງ (Outstanding)</TabsTrigger>
-                            <TabsTrigger value="paid">ຈ່າຍໝົດແລ້ວ (Paid Off)</TabsTrigger>
+                    <div className="flex items-center justify-between mb-6">
+                        <TabsList className="bg-background/50 backdrop-blur-sm p-1 border">
+                            <TabsTrigger value="outstanding" className="px-6">ຍັງຄ້າງ (Outstanding)</TabsTrigger>
+                            <TabsTrigger value="paid" className="px-6">ຈ່າຍໝົດແລ້ວ (Paid Off)</TabsTrigger>
                         </TabsList>
                     </div>
 
@@ -451,6 +548,7 @@ export default function CooperativeLoansPage() {
                             memberMap={memberMap} 
                             handleRowClick={handleRowClick} 
                             handleDeleteClick={handleDeleteClick} 
+                            handleApproveLoan={handleApproveLoan}
                         />
                     </TabsContent>
                     
@@ -462,6 +560,7 @@ export default function CooperativeLoansPage() {
                             memberMap={memberMap} 
                             handleRowClick={handleRowClick} 
                             handleDeleteClick={handleDeleteClick} 
+                            handleApproveLoan={handleApproveLoan}
                         />
                     </TabsContent>
                 </Tabs>

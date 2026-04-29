@@ -18,6 +18,7 @@ export const defaultAccounts: Account[] = [
   { id: 'income_murabaha', code: '401', name: 'ລາຍຮັບຈາກກຳໄລ Murabaha', type: 'income' },
   { id: 'unearned_income', code: '202', name: 'ກຳໄລລໍຖ້າຮັບ (Unearned Income)', type: 'liability' },
   { id: 'income_fees', code: '402', name: 'ລາຍຮັບຄ່າທຳນຽມ', type: 'income' },
+  { id: 'income_trade_profit', code: '403', name: 'ກຳໄລຈາກລູກໜີ້ການຄ້າ', type: 'income' },
   { id: 'expense_admin', code: '501', name: 'ລາຍຈ່າຍບໍລິຫານ', type: 'expense' },
   { id: 'expense_salary', code: '502', name: 'ລາຍຈ່າຍເງິນເດືອນ', type: 'expense' },
 ];

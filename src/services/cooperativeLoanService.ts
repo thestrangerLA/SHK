@@ -176,7 +176,7 @@ export const addLoanRepayment = async (loanId: string, repayments: any[]) => {
       loanId,
       repaymentDate: r.date,
       amountPaid: r.amount,
-      note: r.note,
+      note: r.note || '',
       createdAt: new Date(),
     });
 
